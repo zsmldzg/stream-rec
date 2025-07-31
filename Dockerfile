@@ -9,83 +9,52 @@ RUN gradle stream-rec:build -x test --no-daemon
 # ==================================
 # Stage 2: Create the final, compatible image
 # ==================================
-# 使用基于 Ubuntu 22.04 (Jammy) 的镜像，已包含 Java 21
-FROM eclipse-temurin:21-jre-jammy
+# 使用 Alpine 基础镜像避免 x86-64-v2 的兼容性问题
+FROM amazoncorretto:21-alpine-jdk
 
 # 设置工作目录
 WORKDIR /app
 
-# 设置环境变量，防止 apt-get 在安装时出现交互式提示
-ENV DEBIAN_FRONTEND=noninteractive
+# 从构建阶段拷贝编译好的 Jar 包
+COPY --from=builder /app/stream-rec/build/libs/stream-rec.jar app.jar
 
-# --- 依赖安装 (使用 apt-get) ---
-
-# 1. 安装系统依赖和 Java 运行时 (JRE)
-RUN echo "--- Checking sources.list ---" && \
-    cat /etc/apt/sources.list
-    
-RUN echo "--- Testing network connectivity to archive.ubuntu.com ---" && \
-    curl -v archive.ubuntu.com
-    
-RUN echo "--- Running apt-get update with debug info ---" && \
-    apt-get update -o Debug::Acquire::http=true
-
-RUN echo "--- Running apt-get install ---" && \
-    apt-get install -y --no-install-recommends \
+# 安装系统和 Python 依赖
+RUN apk add --no-cache \
+    tzdata \
+    curl \
     unzip \
     tar \
+    xz \
     python3 \
-    python3-pip \
-    which \
-    xz-utils \
-    tzdata \
-    findutils \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+    py3-pip && \
+    pip3 install streamlink && \
+    # 安装 streamlink-ttvlol 插件
+    INSTALL_DIR="/root/.local/share/streamlink/plugins"; mkdir -p "$INSTALL_DIR"; curl -L -o "$INSTALL_DIR/twitch.py" 'https://github.com/2bc4/streamlink-ttvlol/releases/latest/download/twitch.py'
+ 
+# 安装 ffmpeg (仅 amd64)
+RUN FFMPEG_URL="https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz" && \
+    curl -L $FFMPEG_URL | tar -xJ && \
+    mv ffmpeg-master-latest-linux64-gpl/bin/{ffmpeg,ffprobe,ffplay} /usr/local/bin/ && \
+    chmod +x /usr/local/bin/{ffmpeg,ffprobe,ffplay} && \
+    # 清理下载的临时文件
+    rm -rf ffmpeg-master-latest-linux64-gpl
 
-# 创建一个非 root 的专用用户
-RUN addgroup --system appgroup && \
-    adduser --system --ingroup appgroup --no-create-home appuser
-
-# 从构建阶段复制 jar 包，并直接将所有者设置为 appuser
-COPY --from=builder --chown=appuser:appgroup /app/stream-rec/build/libs/stream-rec.jar app.jar
-
-# 切换到 appuser 用户来执行后续的安装，更安全
-USER appuser
-WORKDIR /home/appuser
-
-# 2. 安装 Python 包
-RUN pip3 install streamlink --no-cache-dir
-
-# 3. 安装自定义插件 (安装到用户目录下)
-RUN INSTALL_DIR="/home/appuser/.local/share/streamlink/plugins"; \
-    mkdir -p "$INSTALL_DIR"; \
-    curl -L -o "$INSTALL_DIR/twitch.py" 'https://github.com/2bc4/streamlink-ttvlol/releases/latest/download/twitch.py'
-
-# 切换回 root 用户以安装系统级工具
-USER root
-WORKDIR /app
-
-# 4. 安装 ffmpeg
-RUN curl -L "https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz" | tar -xJ -C /usr/local/bin/ --strip-components=1 --wildcards '*/ffmpeg' '*/ffprobe' '*/ffplay' && \
-    chmod a+x /usr/local/bin/{ffmpeg,ffprobe,ffplay}
-
-# 5. 安装 rclone
-RUN curl -L "https://downloads.rclone.org/rclone-current-linux-amd64.zip" -o rclone.zip && \
+# 安装 rclone (仅 amd64)
+RUN RCLONE_URL="https://downloads.rclone.org/rclone-current-linux-amd64.zip" && \
+    curl -L $RCLONE_URL -o rclone.zip && \
     unzip rclone.zip && \
-    mv rclone-*-linux*/rclone /usr/bin/ && \
+    # 使用通配符移动，使其不受 rclone 版本号变化的影响
+    mv rclone-*-linux-amd64/rclone /usr/bin/rclone && \
     chown root:root /usr/bin/rclone && \
     chmod 755 /usr/bin/rclone && \
-    rm -rf rclone.zip rclone-*
+    # 清理下载的 zip 和解压后的文件夹
+    rm -rf rclone.zip rclone-*-linux-amd64
 
-# --- 运行配置 ---
-
-ENV TZ=${TZ:-Europe/Paris}
-
+# 设置时区
+ENV TZ=${TZ:-Asia/Shanghai}
+ 
+# 暴露端口
 EXPOSE 12555
-
-# 切换到非 root 用户来运行应用
-USER appuser
-WORKDIR /app
-
+ 
+# 启动命令
 CMD ["java", "-jar", "app.jar"]
