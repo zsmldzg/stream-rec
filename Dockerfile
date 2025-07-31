@@ -3,14 +3,14 @@ WORKDIR /app
 COPY . .
 RUN gradle stream-rec:build -x test --no-daemon
 
-# 使用 Alpine 基础镜像避免 x86-64-v2 的兼容性问题
-FROM amazoncorretto:21-al2023-headless
+# 使用 CentOS Stream 8，它使用 yum/dnf 并且没有 x86-64-v2 CPU 限制
+FROM centos:stream8
 WORKDIR /app
 COPY --from=builder /app/stream-rec/build/libs/stream-rec.jar app.jar
 
 # 安装系统和 Python 依赖
 RUN yum update -y && \
-    yum install -y unzip tar python3 python3-pip which xz tzdata findutils && \
+    yum install -y java-21-openjdk-devel unzip tar python3 python3-pip which xz tzdata findutils && \
     pip3 install streamlink && \
     # install streamlink-ttvlol
     INSTALL_DIR="/root/.local/share/streamlink/plugins"; mkdir -p "$INSTALL_DIR"; curl -L -o "$INSTALL_DIR/twitch.py" 'https://github.com/2bc4/streamlink-ttvlol/releases/latest/download/twitch.py' && \
