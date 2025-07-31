@@ -80,7 +80,7 @@ RUN curl -L "https://downloads.rclone.org/rclone-current-linux-amd64.zip" -o rcl
 
 # --- 运行配置 ---
 
-ENV TZ=${TZ:-Asia/Shanghai}
+ENV TZ=${TZ:-Europe/Paris}
 
 EXPOSE 12555
 
