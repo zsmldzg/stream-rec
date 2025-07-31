@@ -10,7 +10,7 @@ COPY --from=builder /app/stream-rec/build/libs/stream-rec.jar app.jar
 
 # 安装系统和 Python 依赖
 RUN yum update -y && \
-    yum install -y unzip tar python3 python3-pip which xz tzdata findutils && \
+    yum install -y unzip tar python3 python3-pip which xz tzdata findutils curl && \
     pip3 install streamlink && \
     # install streamlink-ttvlol
     INSTALL_DIR="/root/.local/share/streamlink/plugins"; mkdir -p "$INSTALL_DIR"; curl -L -o "$INSTALL_DIR/twitch.py" 'https://github.com/2bc4/streamlink-ttvlol/releases/latest/download/twitch.py' && \
