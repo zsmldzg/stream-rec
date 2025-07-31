@@ -9,8 +9,8 @@ RUN gradle stream-rec:build -x test --no-daemon
 # ==================================
 # Stage 2: Create the final, compatible image
 # ==================================
-# 使用 Ubuntu 22.04 作为基础镜像，以获得最佳的硬件兼容性
-FROM ubuntu:22.04
+# 使用基于 Ubuntu 22.04 (Jammy) 的镜像，已包含 Java 21
+FROM eclipse-temurin:21-jre-jammy
 
 # 设置工作目录
 WORKDIR /app
@@ -23,7 +23,6 @@ ENV DEBIAN_FRONTEND=noninteractive
 # 1. 安装系统依赖和 Java 运行时 (JRE)
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    openjdk-21-jre-headless \
     unzip \
     tar \
     python3 \
