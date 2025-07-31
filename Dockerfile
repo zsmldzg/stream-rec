@@ -21,7 +21,16 @@ ENV DEBIAN_FRONTEND=noninteractive
 # --- 依赖安装 (使用 apt-get) ---
 
 # 1. 安装系统依赖和 Java 运行时 (JRE)
-RUN apt-get update && \
+RUN echo "--- Checking sources.list ---" && \
+    cat /etc/apt/sources.list
+    
+RUN echo "--- Testing network connectivity to archive.ubuntu.com ---" && \
+    curl -v archive.ubuntu.com
+    
+RUN echo "--- Running apt-get update with debug info ---" && \
+    apt-get update -o Debug::Acquire::http=true
+
+RUN echo "--- Running apt-get install ---" && \
     apt-get install -y --no-install-recommends \
     unzip \
     tar \
