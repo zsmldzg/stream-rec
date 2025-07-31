@@ -3,8 +3,8 @@ WORKDIR /app
 COPY . .
 RUN gradle stream-rec:build -x test --no-daemon
 
-# 使用 CentOS Stream 8，它使用 yum/dnf 并且没有 x86-64-v2 CPU 限制
-FROM centos:stream8
+# 使用 AlmaLinux 8，它使用 yum/dnf 并且没有 x86-64-v2 CPU 限制
+FROM almalinux:8
 WORKDIR /app
 COPY --from=builder /app/stream-rec/build/libs/stream-rec.jar app.jar
 
