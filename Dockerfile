@@ -3,19 +3,28 @@ WORKDIR /app
 COPY . .
 RUN gradle stream-rec:build -x test --no-daemon
 
-# 使用 AlmaLinux 8，它使用 yum/dnf 并且没有 x86-64-v2 CPU 限制
-FROM almalinux:8
+# 使用 eclipse-temurin 镜像，它基于 Ubuntu 22.04 ("Jammy") 并且已经内置了 Java 21 没有 x86-64-v2 CPU 限制
+FROM eclipse-temurin:21-jdk-jammy
 WORKDIR /app
 COPY --from=builder /app/stream-rec/build/libs/stream-rec.jar app.jar
 
-# 安装系统和 Python 依赖
-RUN yum update -y && \
-    yum install -y java-21-openjdk-devel unzip tar python3 python3-pip which xz tzdata findutils && \
-    pip3 install streamlink && \
+# 分析安装失败程序1
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        unzip tar python3 python3-pip
+        
+# 分析安装失败程序2
+RUN apt-get install -y --no-install-recommends \
+        which xz-utils findutils curl
+
+# 分析安装失败程序3
+RUN pip3 install streamlink && \
     # install streamlink-ttvlol
     INSTALL_DIR="/root/.local/share/streamlink/plugins"; mkdir -p "$INSTALL_DIR"; curl -L -o "$INSTALL_DIR/twitch.py" 'https://github.com/2bc4/streamlink-ttvlol/releases/latest/download/twitch.py' && \
-    yum clean all && \
-    rm -rf /var/cache/yum
+    # 清理 apt 缓存以减小最终的镜像体积
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
 
 # 安装 ffmpeg (仅 amd64)
 RUN URL="https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz" && \
