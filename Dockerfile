@@ -15,7 +15,7 @@ RUN apt-get update && \
         
 # 分析安装失败程序2
 RUN apt-get install -y --no-install-recommends \
-        which xz-utils findutils curl
+        xz-utils findutils curl
 
 # 分析安装失败程序3
 RUN pip3 install streamlink && \
