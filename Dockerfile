@@ -30,9 +30,9 @@ RUN pip3 install streamlink && \
 RUN URL="https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz" && \
     curl -L -O $URL
     
-RUN cp ffmpeg-master-latest-linux64-gpl.tar.xz ffmpeg-master-latest-linux64-gpl-bak.tar.xz
-
 RUN tar -xJf ffmpeg-master-latest-linux64-gpl.tar.xz
+
+RUN mkdir -p /usr/local/bin/
 
 RUN mv ffmpeg-master-latest-linux64-gpl/bin/{ffmpeg,ffprobe,ffplay} /usr/local/bin/ 
     
