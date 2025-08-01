@@ -34,7 +34,7 @@ RUN tar -xJf ffmpeg-master-latest-linux64-gpl.tar.xz
 
 RUN mkdir -p /usr/local/bin/
 
-RUN mv ffmpeg-master-latest-linux64-gpl/bin/{ffmpeg,ffprobe,ffplay} /usr/local/bin/ 
+RUN cp ffmpeg-master-latest-linux64-gpl/bin/ff* /usr/local/bin/ 
     
 RUN chmod +x /usr/local/bin/{ffmpeg,ffprobe,ffplay} && \
     rm -rf ffmpeg-*
