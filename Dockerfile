@@ -30,14 +30,20 @@ RUN pip3 install streamlink && \
 RUN URL="https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz" && \
     curl -L -O $URL
     
+RUN ls -l 
+
 RUN tar -xJf ffmpeg-master-latest-linux64-gpl.tar.xz
+RUN ls -l
+RUN ls -l ./ffmpeg-master-latest-linux64-gpl/bin/
 
 RUN mkdir -p /usr/local/bin/
 
 RUN cp ffmpeg-master-latest-linux64-gpl/bin/ff* /usr/local/bin/ 
-    
-RUN chmod +x /usr/local/bin/{ffmpeg,ffprobe,ffplay} && \
+RUN ls /usr/local/bin/
+
+RUN chmod +x /usr/local/bin/ff* && \
     rm -rf ffmpeg-*
+RUN ls -l
 
 # 安装 rclone (仅 amd64)
 RUN URL="https://downloads.rclone.org/rclone-current-linux-amd64.zip" && \
